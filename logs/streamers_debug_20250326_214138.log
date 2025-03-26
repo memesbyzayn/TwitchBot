@@ -1,0 +1,15 @@
+2025-03-26 21:41:42,448 - INFO - Logging system initialized.
+2025-03-26 21:41:42,450 - INFO - Fetching page 1...
+2025-03-26 21:41:42,465 - DEBUG - Starting new HTTPS connection (1): api.twitch.tv:443
+2025-03-26 21:41:44,448 - DEBUG - https://api.twitch.tv:443 "GET /helix/streams?first=100 HTTP/1.1" 200 None
+2025-03-26 21:41:44,450 - INFO - No streamers found on page 1. Retrying in 2 seconds...
+2025-03-26 21:41:46,452 - INFO - Fetching page 2...
+2025-03-26 21:41:46,454 - DEBUG - Starting new HTTPS connection (1): api.twitch.tv:443
+2025-03-26 21:41:47,630 - DEBUG - https://api.twitch.tv:443 "GET /helix/streams?first=100&after=eyJiIjp7IkN1cnNvciI6ImV5SnpJam96TkRnMk1TNDNNekU0T1RnME5qY3lNalFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6ImV5SnpJam96TkRFM0xqZzFNemswTnpFNE1USTRNek1zSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9fQ HTTP/1.1" 200 None
+2025-03-26 21:41:47,643 - INFO - Logged: apothicdecay - 2291 viewers - Just Chatting
+2025-03-26 21:41:47,644 - INFO - Logged: iskall85 - 2041 viewers - Minecraft
+2025-03-26 21:41:47,646 - INFO - Logged details of 2 streamers below 90000 viewers.
+2025-03-26 21:41:47,650 - INFO - apothicdecay - 2291 viewers - Just Chatting
+2025-03-26 21:41:47,651 - INFO - Tags: ['English', 'nonbinary', 'Elf', 'ADHD', 'laurencohan', 'Skyrim', 'minecraft', 'LGBTQIA', 'Zelda', 'VanLife']
+2025-03-26 21:41:47,651 - INFO - iskall85 - 2041 viewers - Minecraft
+2025-03-26 21:41:47,651 - INFO - Tags: ['English', 'minecraft', 'iskall85', 'vaulthunters', 'drops', 'ViewerRewards']

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Twitch Bot Logs</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Twitch Bot Logs</h2>
+        <!-- Buttons to start/stop the bot -->
+        <button id="startBotBtn" class="btn btn-success">Start Bot</button>
+        <button id="stopBotBtn" class="btn btn-danger">Stop Bot</button>
+
+        <!-- Log display area -->
+        <div id="botLogs" class="mt-4 p-3 bg-light border" style="height: 400px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        var socket = io();
+
+        // Listen for bot_log_update events from the server
+        socket.on("bot_log_update", function(data) {
+            var logContainer = document.getElementById("botLogs");
+            logContainer.innerHTML += "<p>" + data.log + "</p>";
+            logContainer.scrollTop = logContainer.scrollHeight;  // Auto-scroll
+        });
+
+        // Start Bot
+        document.getElementById("startBotBtn").addEventListener("click", function() {
+            fetch("/run_bot", { method: "POST" })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(err => console.error("Error starting bot:", err));
+        });
+
+        // Stop Bot
+        document.getElementById("stopBotBtn").addEventListener("click", function() {
+            fetch("/stop_bot", { method: "POST" })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(err => console.error("Error stopping bot:", err));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Streamers</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Fetch Twitch Streamers</h2>
+        <form id="fetchForm">
+            <div class="mb-3">
+                <label for="language">Language</label>
+                <input type="text" name="language" class="form-control" id="language" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="max-viewers">Max Viewers</label>
+                <input type="number" name="max_viewers" class="form-control" id="max-viewers" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="log_count">Number of Streamers</label>
+                <input type="number" name="log_count" class="form-control" id="log_count" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="tags_filter">Tags</label>
+                <input type="text" name="tags_filter" class="form-control" id="tags_filter" placeholder="Enter tags, separated by commas" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Start Fetching</button>
+        </form>
+
+        <!-- Loading message (hidden by default) -->
+        <div id="loadingMessage" class="mt-4 text-warning" style="display: none;">
+            Fetching streamers... Please wait.
+        </div>
+
+        <!-- Log display area -->
+        <div id="logs" class="mt-4 p-3 bg-light border" style="height: 300px; overflow-y: auto; display: none;"></div>
+
+        <!-- New Update Prompts Button -->
+        <button id="updatePrompts" class="btn btn-warning mt-3" style="display: none;">Update Prompts</button>
+
+        <!-- Twitch Bot Buttons -->
+        <button id="runBot" class="btn btn-success mt-3" style="display: none;">Run Twitch Bot</button>
+        <button id="runBot2" class="btn btn-info mt-3" style="display: none;">Run Bot (Alternate)</button>
+
+        <!-- Display existing CSV files -->
+        <h2 class="mt-4">Existing Files:</h2>
+        <ul>
+            {% for file in files %}
+                <li><a href="{{ url_for('static', filename=file) }}" download>{{ file }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        var socket = io();
+
+        document.getElementById("fetchForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var formData = new FormData(event.target);
+
+            fetch("/fetch_streamers", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("loadingMessage").style.display = "block";
+                document.getElementById("logs").style.display = "block";
+                document.getElementById("logs").innerHTML = "";  // Clear logs
+            });
+        });
+
+        socket.on("log_update", function(data) {
+            var logContainer = document.getElementById("logs");
+            logContainer.innerHTML += "<p>" + data.log + "</p>";
+            logContainer.scrollTop = logContainer.scrollHeight;  // Auto-scroll
+        });
+
+        socket.on("fetch_complete", function(data) {
+            document.getElementById("loadingMessage").innerText = "Fetching Complete!";
+            // Reveal the Update Prompts button when fetching is done
+            document.getElementById("updatePrompts").style.display = "block";
+
+            // document.getElementById("runBot").style.display = "block";
+            // document.getElementById("runBot2").style.display = "block"; // Show new button
+        });
+
+        function runBot() {
+            fetch("/run_bot", { method: "POST" })
+            .then(response => response.json())
+            .then(data => alert(data.message));
+        }
+
+        document.getElementById("runBot").addEventListener("click", runBot);
+        document.getElementById("runBot2").addEventListener("click", runBot); // Alternate button
+    
+        // Add click listener for the new Update Prompts button
+        document.getElementById("updatePrompts").addEventListener("click", function() {
+            window.location.href = "/update_prompts";
+        });
+        
+    </script>
+
+</body>
+</html>

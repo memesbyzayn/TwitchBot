@@ -1,0 +1,11 @@
+2025-03-26 21:08:25,449 - INFO - Logging system initialized.
+2025-03-26 21:08:25,451 - INFO - Fetching page 1...
+2025-03-26 21:08:25,465 - DEBUG - Starting new HTTPS connection (1): api.twitch.tv:443
+2025-03-26 21:08:29,804 - DEBUG - https://api.twitch.tv:443 "GET /helix/streams?first=100 HTTP/1.1" 200 None
+2025-03-26 21:08:29,807 - INFO - Logged: VALORANT_EMEA - 9159 viewers - VALORANT
+2025-03-26 21:08:29,809 - INFO - Logged: Subroza - 3177 viewers - VALORANT
+2025-03-26 21:08:29,810 - INFO - Logged details of 2 streamers below 400000 viewers.
+2025-03-26 21:08:29,814 - INFO - VALORANT_EMEA - 9159 viewers - VALORANT
+2025-03-26 21:08:29,814 - INFO - Tags: ['Esports', 'English', 'VALORANT', 'VCT', 'VALORANTEurope', 'VCTEMEA']
+2025-03-26 21:08:29,815 - INFO - Subroza - 3177 viewers - VALORANT
+2025-03-26 21:08:29,815 - INFO - Tags: ['English', 'French', 'valorant', 'radiant', 'Subroza', 'pro', 'professional', 'ranked']
