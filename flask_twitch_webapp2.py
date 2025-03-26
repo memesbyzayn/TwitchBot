@@ -15,7 +15,9 @@ import requests
 
 app = Flask(__name__)
 # socketio = SocketIO(app)  # Initialize Flask-SocketIO
-socketio = SocketIO(app, message_queue="redis://127.0.0.1:6379", async_mode="eventlet")  # <-- Use Redis
+# socketio = SocketIO(app, message_queue="redis://127.0.0.1:6379", async_mode="eventlet")  # <-- Use Redis
+redis_url = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
+socketio = SocketIO(app, message_queue=redis_url, async_mode="eventlet")
 
 CONFIG_FILE = "CONFIG2.ini"
 DB_FOLDER = "static/"  # Folder to store CSV files
@@ -351,4 +353,8 @@ def bot_logs():
 #     return jsonify({"message": "Twitch bot started!"})
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, use_reloader=False, host="0.0.0.0", port=5000)
+    import os
+    port = int(os.environ.get("PORT", 5000))  # Use Railway's PORT or default to 5000
+    socketio.run(app, debug=True, host="0.0.0.0", port=port)
+
+    # socketio.run(app, debug=True, use_reloader=False, host="0.0.0.0", port=5000)

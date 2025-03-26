@@ -17,7 +17,10 @@ from fetch_streamers import get_latest_timestamp
 
 
 from flask_socketio import SocketIO
-socketio = SocketIO(message_queue="redis://127.0.0.1:6379", async_mode="eventlet")
+
+redis_url = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
+socketio = SocketIO(message_queue=redis_url, async_mode="eventlet")
+# socketio = SocketIO(message_queue="redis://127.0.0.1:6379", async_mode="eventlet")
 
 
 # # Flask app for handling authorization process
