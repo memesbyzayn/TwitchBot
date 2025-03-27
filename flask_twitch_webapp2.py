@@ -16,7 +16,7 @@ import requests
 app = Flask(__name__)
 # socketio = SocketIO(app)  # Initialize Flask-SocketIO
 # socketio = SocketIO(app, message_queue="redis://127.0.0.1:6379", async_mode="eventlet")  # <-- Use Redis
-redis_url = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
+redis_url = os.environ.get("REDIS_URL", os.environ.get("REDIS_URL")) #"redis://127.0.0.1:6379")
 socketio = SocketIO(app, message_queue=redis_url, async_mode="eventlet")
 
 CONFIG_FILE = "CONFIG2.ini"
