@@ -48,7 +48,11 @@ REFRESH_TOKEN = config.get('Twitch', 'refresh_token').strip()
 CLIENT_ID = config.get('Twitch', 'client_id').strip()
 CLIENT_SECRET = config.get('Twitch', 'client_secret').strip()
 REDIRECT_URL = config.get('Twitch', 'redirect_uri').strip()
-MESSAGES = config.get('Bot', 'messages', fallback="Hello|Welcome").split('|')
+initial_messages = config.get('Bot', 'initial_messages', fallback="Hello|Welcome").split('|')
+second_messages = config.get('Bot', 'second_messages').split('|')
+timer = config.get('Bot', 'message_interval', fallback=120) # 2 min fallback 
+
+prompt_pairs = list(zip(initial_messages, second_messages))
 
 # Twitch Helix API endpoint for checking stream status
 TWITCH_HELIX_STREAMS_URL = config.get('Helix', 'api_url').strip()
@@ -95,7 +99,20 @@ def read_channel_names_from_csv(csv_file_path):
 CHANNELS = read_channel_names_from_csv(LOG_FILE)
 
 # Track conversation state and timeouts
-conversation_state = {channel: {"waiting": False, "timeout_task": None, "message_count": 0, "start_time": None, "first_reply": None, "second_reply": None, "socials": [], "abandoned": False, "initial_message_sent": False, "followup_message_sent": False} for channel in CHANNELS}
+conversation_state = {channel: {
+                        "waiting": False, 
+                        "timeout_task": None,
+                        "message_count": 0,
+                        "start_time": None, 
+                        "first_reply": None, 
+                        "second_reply": None, 
+                        "socials": [], 
+                        "abandoned": False, 
+                        "initial_message_sent": False, 
+                        "followup_message_sent": False,
+                        "message_pair": None 
+                    } 
+                    for channel in CHANNELS}
 
 # @app.route("/")
 # def home():
@@ -218,7 +235,8 @@ class TwitchBot(commands.Bot):
                 return
 
         super().__init__(token=f'oauth:{ACCESS_TOKEN}', prefix='!', initial_channels=CHANNELS)
-        self.messages = MESSAGES
+        self.prompt_pairs = prompt_pairs
+        self.timer = timer
 
     async def event_ready(self):
         """Called when the bot successfully logs in."""
@@ -241,13 +259,19 @@ class TwitchBot(commands.Bot):
 
             # Send an initial message if the stream is live
             if not conversation_state[channel_name]["initial_message_sent"]:
-                message = random.choice(self.messages)
+                # pick & store exactly one pair for this channel
+                pair = random.choice(self.prompt_pairs)
+                conversation_state[channel_name]["message_pair"] = pair
+
+                # send the initial msg 
+                initial_msg, _ = pair
+
                 channel = self.get_channel(channel_name)
                 if channel:
-                    await channel.send(message)
-                    print(f"Initial message sent to {channel_name}: {message}")
+                    await channel.send(initial_msg)
+                    print(f"Initial message sent to {channel_name}: {initial_msg}")
                     # Emit log update
-                    log_message = f"Initial message sent to {channel_name}: {message}"
+                    log_message = f"Initial message sent to {channel_name}: {initial_msg}"
                     logging.info(log_message)
                     socketio.emit("bot_log_update", {"log": log_message})
 
@@ -269,7 +293,7 @@ class TwitchBot(commands.Bot):
 
     async def _response_timeout(self, channel_name):
         """Handle the 10-minute timeout for waiting for a response."""
-        await asyncio.sleep(600)  # 10 minutes = 600 seconds
+        await asyncio.sleep(float(self.timer))  # 2 minutes = 120 seconds
         if conversation_state[channel_name]["waiting"]:
             print(f"Timeout reached for {channel_name}. No response received.")
             log_message = f"Timeout reached for {channel_name}. No response received."
@@ -278,12 +302,14 @@ class TwitchBot(commands.Bot):
 
             if not conversation_state[channel_name]["followup_message_sent"]:
                 # Send a follow-up message if no response was received
-                message = random.choice(self.messages)
+                pair = conversation_state[channel_name]["message_pair"]
+                _, followup_msg = pair
+
                 channel = self.get_channel(channel_name)
                 if channel:
-                    await channel.send(message)
-                    print(f"Follow-up message sent to {channel_name}: {message}")
-                    log_message = f"Follow-up message sent to {channel_name}: {message}"
+                    await channel.send(followup_msg)
+                    print(f"Follow-up message sent to {channel_name}: {followup_msg}")
+                    log_message = f"Follow-up message sent to {channel_name}: {followup_msg}"
                     logging.info(log_message)
                     socketio.emit("bot_log_update", {"log": log_message})
 
@@ -386,12 +412,19 @@ class TwitchBot(commands.Bot):
                             conversation_state[channel_name]["timeout_task"].cancel()  # Cancel the timeout task
                         self._log_conversation(channel_name)
                 else:
-                    print(f"{message.author.name} did not provide a social link. Prompting...")
-                    log_message = f"{message.author.name} did not provide a social link. Prompting..."
-                    logging.info(log_message)
-                    socketio.emit("bot_log_update", {"log": log_message})
-                    await message.channel.send(f"@{message.author.name}, could you provide a Discord or Instagram link?")
+                    if not conversation_state[channel_name]["fallback_prompt_sent"]:
+                        pair = conversation_state[channel_name]["message_pair"] #or random.choice(self.prompt_pairs)
+                        _, followup_msg = pair
+                        await message.channel.send(f"@{message.author.name}, {followup_msg}") 
+                        log_message = f"{message.author.name} did not provide a social link. Sending follow-up... with {followup_msg}"
+                        print(log_message)
+                        logging.info(log_message)
 
+                        socketio.emit("bot_log_update", {"log": log_message})
+                        # mark that we've prompted once, so we won't spam
+                        conversation_state[channel_name]["fallback_prompt_sent"] = True
+
+                   
     def _log_conversation(self, channel_name):
         """Log the conversation details to the CSV file."""
         with open(LOG_FILE, mode='a', newline='') as file:

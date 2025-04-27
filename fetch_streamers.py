@@ -14,7 +14,8 @@ from flask_socketio import SocketIO
 
 # Connect to the Flask-SocketIO server
 # socketio = SocketIO(message_queue="redis://127.0.0.1:6379", async_mode="eventlet")  # Ensure Redis is running for message queue
-socketio = SocketIO(message_queue=os.environ.get("REDIS_URL"), async_mode="eventlet")  # Ensure Redis is running for message queue
+redis_url = os.environ.get("REDIS_URL", os.environ.get("REDIS_URL"))
+socketio = SocketIO(message_queue=redis_url, async_mode="eventlet")  # Ensure Redis is running for message queue
 
 
 # Setup argument parser

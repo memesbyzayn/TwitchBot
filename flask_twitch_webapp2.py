@@ -293,22 +293,55 @@ def download_csv(filename):
     return send_file(file_path, as_attachment=True)
 
 
+# @app.route('/update_prompts', methods=["GET", "POST"])
+# def update_prompts():
+#     if request.method == "POST":
+#         new_messages = request.form.get("new_messages", "")
+        
+#         # Update messages in the config
+#         config["Bot"]["messages"] = new_messages
+#         with open(CONFIG_FILE, "w") as configfile:
+#             config.write(configfile)
+        
+#         return jsonify({"message": "Bot prompts updated successfully!"})
+
+#     saved_messages = config.get("Bot", "messages", fallback="Hello|Welcome")
+#     return render_template("update_prompts.html", saved_messages=saved_messages)
+
+# bot_process = None  # Global variable to track the bot's process
+
 @app.route('/update_prompts', methods=["GET", "POST"])
 def update_prompts():
+    config = load_config()
+
     if request.method == "POST":
-        new_messages = request.form.get("new_messages", "")
-        
-        # Update messages in the config
-        config["Bot"]["messages"] = new_messages
+        data = request.get_json()
+
+        message_interval = data.get("message_interval", 1200)
+        initial_messages = data.get("initial_messages", "")
+        second_messages = data.get("second_messages", "")
+
+        config["Bot"]["message_interval"] = str(message_interval)
+        config["Bot"]["initial_messages"] = initial_messages
+        config["Bot"]["second_messages"] = second_messages
+
         with open(CONFIG_FILE, "w") as configfile:
             config.write(configfile)
-        
-        return jsonify({"message": "Bot prompts updated successfully!"})
 
-    saved_messages = config.get("Bot", "messages", fallback="Hello|Welcome")
-    return render_template("update_prompts.html", saved_messages=saved_messages)
+        return jsonify({"message": "Bot prompts and interval updated successfully!"})
 
-bot_process = None  # Global variable to track the bot's process
+    # On GET, load existing values
+    saved_interval = config.get("Bot", "message_interval", fallback="1200")
+    saved_initial = config.get("Bot", "initial_messages", fallback="Hello|Welcome")
+    saved_second = config.get("Bot", "second_messages", fallback="")
+
+    return render_template(
+        "update_prompts.html",
+        saved_interval=saved_interval,
+        saved_initial=saved_initial,
+        saved_second=saved_second
+    )
+
 
 @app.route('/run_bot', methods=["POST"])
 def run_bot():

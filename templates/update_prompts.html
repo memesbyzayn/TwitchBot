@@ -1,69 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Update Bot Prompts</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <script>
-        function addTextBox() {
-            let container = document.getElementById("prompts-container");
-            let inputGroup = document.createElement("div");
-            inputGroup.className = "input-group mb-2";
-            let input = document.createElement("input");
-            input.type = "text";
-            input.className = "form-control";
-            input.name = "new_messages";
-            input.placeholder = "Enter a prompt";
-            let removeButton = document.createElement("button");
-            removeButton.className = "btn btn-danger";
-            removeButton.innerText = "Remove";
-            removeButton.onclick = function() {
-                container.removeChild(inputGroup);
-            };
-            inputGroup.appendChild(input);
-            inputGroup.appendChild(removeButton);
-            container.appendChild(inputGroup);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Bot Prompts</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script>
+    function addPromptPair(initial = "", second = "") {
+      const container = document.getElementById("prompts-container");
 
-        function updatePrompts() {
-            let messages = [];
-            document.querySelectorAll("input[name='new_messages']").forEach(input => {
-                if (input.value.trim()) {
-                    messages.push(input.value.trim());
-                }
-            });
-            fetch("/update_prompts", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: "new_messages=" + encodeURIComponent(messages.join('|'))
-            })
-            .then(response => response.json())
-            .then(data => alert(data.message))
-            .catch(error => console.error("Error updating prompts:", error));
+      const inputGroup = document.createElement("div");
+      inputGroup.className = "input-group mb-2";
+
+      const initialInput = document.createElement("input");
+      initialInput.type = "text";
+      initialInput.className = "form-control";
+      initialInput.name = "initial_messages";
+      initialInput.placeholder = "Enter Initial Message";
+      initialInput.value = initial;
+
+      const secondInput = document.createElement("input");
+      secondInput.type = "text";
+      secondInput.className = "form-control";
+      secondInput.name = "second_messages";
+      secondInput.placeholder = "Enter Second Message";
+      secondInput.value = second;
+
+      const removeButton = document.createElement("button");
+      removeButton.className = "btn btn-danger";
+      removeButton.type = "button";
+      removeButton.innerText = "Remove";
+      removeButton.onclick = function() {
+        container.removeChild(inputGroup);
+      };
+
+      inputGroup.appendChild(initialInput);
+      inputGroup.appendChild(secondInput);
+      inputGroup.appendChild(removeButton);
+      container.appendChild(inputGroup);
+    }
+
+    function updatePrompts() {
+      const initialMessages = [];
+      const secondMessages = [];
+
+      document.querySelectorAll("input[name='initial_messages']").forEach(input => {
+        if (input.value.trim()) {
+          initialMessages.push(input.value.trim());
         }
-    </script>
+      });
+
+      document.querySelectorAll("input[name='second_messages']").forEach(input => {
+        if (input.value.trim()) {
+          secondMessages.push(input.value.trim());
+        }
+      });
+
+      const intervalMinutes = document.getElementById('intervalInput').value;
+      const intervalSeconds = parseInt(intervalMinutes) * 60;
+
+      const payload = {
+        initial_messages: initialMessages,
+        second_messages: secondMessages,
+        message_interval: intervalSeconds
+      };
+
+      fetch("/update_prompts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => alert(data.message))
+      .catch(error => console.error("Error updating prompts:", error));
+    }
+  </script>
 </head>
-<body>
-    <div class="container mt-5">
-        <h2>Update Twitch Bot Prompts</h2>
-        <form onsubmit="event.preventDefault(); updatePrompts();">
-            <div id="prompts-container">
-                {% for prompt in saved_messages.split('|') %}
-                <div class="input-group mb-2">
-                    <input type="text" name="new_messages" class="form-control" value="{{ prompt }}">
-                    <button type="button" class="btn btn-danger" onclick="this.parentElement.remove();">Remove</button>
-                </div>
-                {% endfor %}
-            </div>
-            <button type="button" class="btn btn-secondary" onclick="addTextBox();">Add Prompt</button>
-            <button type="submit" class="btn btn-primary">Update Prompts</button>
-        </form>
 
-        <!-- Button to go to bot logs page -->
-        <button class="btn btn-success mt-4" onclick="location.href='/bot_logs'">
-            Go to Bot Runner
-        </button>
-    </div>
+<body>
+  <div class="container mt-5">
+    <h2>Update Twitch Bot Prompts</h2>
+    <form onsubmit="event.preventDefault(); updatePrompts();">
+      
+      <!-- Interval input -->
+      <div class="mb-4">
+        <label for="intervalInput" class="form-label">Message Interval (in minutes)</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          id="intervalInput" 
+          value="{{ message_interval // 60 }}" 
+          placeholder="Enter interval in minutes" 
+          min="1" 
+          required
+        >
+      </div>
+
+      <!-- Prompt pairs -->
+      <div id="prompts-container">
+        {% for initial, second in prompt_pairs %}
+        <div class="input-group mb-2">
+          <input type="text" name="initial_messages" class="form-control" value="{{ initial }}" placeholder="Enter Initial Message">
+          <input type="text" name="second_messages" class="form-control" value="{{ second }}" placeholder="Enter Second Message">
+          <button type="button" class="btn btn-danger" onclick="this.parentElement.remove();">Remove</button>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Add prompt pair -->
+      <button type="button" class="btn btn-secondary mb-3" onclick="addPromptPair();">Add Prompt Pair</button>
+
+      <!-- Submit button -->
+      <button type="submit" class="btn btn-primary">Update Prompts</button>
+    </form>
+
+    <!-- Go to Bot Logs -->
+    <button class="btn btn-success mt-4" onclick="location.href='/bot_logs'">
+      Go to Bot Runner
+    </button>
+  </div>
 </body>
 </html>
