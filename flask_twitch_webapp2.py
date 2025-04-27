@@ -309,7 +309,6 @@ def download_csv(filename):
 #     return render_template("update_prompts.html", saved_messages=saved_messages)
 
 # bot_process = None  # Global variable to track the bot's process
-
 @app.route('/update_prompts', methods=["GET", "POST"])
 def update_prompts():
     config = load_config()
@@ -317,31 +316,37 @@ def update_prompts():
     if request.method == "POST":
         data = request.get_json()
 
-        message_interval = data.get("message_interval", 1200)
-        initial_messages = data.get("initial_messages", "")
-        second_messages = data.get("second_messages", "")
+        # These come in from your JS as arrays and a number
+        message_interval   = data.get("message_interval", 1200)
+        initial_messages   = data.get("initial_messages", [])
+        second_messages    = data.get("second_messages", [])
 
-        config["Bot"]["message_interval"] = str(message_interval)
-        config["Bot"]["initial_messages"] = initial_messages
-        config["Bot"]["second_messages"] = second_messages
+        # Save back as pipe-separated strings and integer
+        config["Bot"]["message_interval"]  = str(message_interval)
+        config["Bot"]["initial_messages"]  = "|".join(initial_messages)
+        config["Bot"]["second_messages"]   = "|".join(second_messages)
 
         with open(CONFIG_FILE, "w") as configfile:
             config.write(configfile)
 
         return jsonify({"message": "Bot prompts and interval updated successfully!"})
 
-    # On GET, load existing values
-    saved_interval = config.get("Bot", "message_interval", fallback="1200")
-    saved_initial = config.get("Bot", "initial_messages", fallback="Hello|Welcome")
-    saved_second = config.get("Bot", "second_messages", fallback="")
+    # GET: load existing values from CONFIG2.ini
+    saved_interval = int(config.get("Bot", "message_interval", fallback="1200"))
+    # Split the two prompt lists back into Python lists
+    initials = config.get("Bot", "initial_messages", fallback="Hello|Welcome").split("|")
+    seconds  = config.get("Bot", "second_messages",  fallback="").split("|")
+
+    # Pair them up for the template
+    prompt_pairs = list(zip(initials, seconds))
+    if not prompt_pairs:
+        prompt_pairs = [("", "")]
 
     return render_template(
         "update_prompts.html",
-        saved_interval=saved_interval,
-        saved_initial=saved_initial,
-        saved_second=saved_second
+        message_interval=      saved_interval,  # in seconds
+        prompt_pairs=          prompt_pairs
     )
-
 
 @app.route('/run_bot', methods=["POST"])
 def run_bot():
