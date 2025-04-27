@@ -1,24 +1,25 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set environment variables for Python
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
 ENV PORT=5000
+ENV FLASK_APP=flask_twitch_webapp2.py
+ENV FLASK_RUN_HOST=0.0.0.0
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the requirements file and install dependencies
+# Install dependencies
 COPY requirements.txt /app/
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy the entire application code into the container
+# Copy app code
 COPY . /app/
 
-# Expose the port Railway will use (Railway sets PORT via environment variable)
+# Expose the port
 EXPOSE $PORT
 
-# Command to run your app (adjust the filename if needed)
-CMD ["python", "flask_twitch_webapp2.py"]
+# Run the application
+CMD ["flask", "run", "--port=5000"]
